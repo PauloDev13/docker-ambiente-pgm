@@ -1,0 +1,6 @@
+docker compose exec backend env -> exibe todas as variáveis setadas no backend dentro do 				   ambiente Linux.
+
+docker compose down --rmi all -> exclui todos os containers declarados no docker-					 compose.yml e todas as images criadas.
+
+Docker login -> para logar na conta criada no Docker hub e enviar images
+Docker logout -> para sair da conta e entrar em uma nova conta.

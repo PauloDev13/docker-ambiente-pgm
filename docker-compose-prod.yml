@@ -1,0 +1,64 @@
+services:
+  db:
+    image: mariadb:10.11
+    container_name: app_mariadb
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASS}
+      MARIADB_DATABASE: ${DB_NAME}
+    volumes:
+      - db-data:/var/lib/mysql
+    networks:
+      - pgm-intranet-network
+    ports:
+      - "3306:3306"
+    # HEALTHCHECK: Garante que o banco está pronto para o Flyway
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    # Mudança 1: Sai o 'build', entra a sua imagem pronta no Docker Hub
+    image: devpgm/pgm-dev:backend-v1.0.1
+    container_name: app_backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      # Se quiser sobrescrever a URL via Compose, você também pode:
+      FRONTEND_URLS: ${FRONTEND_URLS:-http://localhost:8080,http://localhost:4200}
+    networks:
+      - pgm-intranet-network
+      
+    # Não expomos a porta 8080 do backend para a máquina host!
+    # Somente o Nginx terá acesso interno a ela.
+
+  frontend:
+    # Mudança 2: Sai o 'build', entra a imagem do Angular com Nginx embutido
+    image: devpgm/pgm-dev:frontend-v1.0.2 
+    container_name: app_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "8080:8080" # Expõe a porta 8080 do Nginx para o WSL/Windows
+    environment:
+      # O lado esquerdo é o nome dentro do container.
+      # O lado direito (${API_URL}) puxa o valor do seu arquivo .env
+      API_URL: ${API_URL}
+    networks:
+      - pgm-intranet-network
+    # Mudança 3: Sem mapeamento de volume do nginx.conf! Ele já está dentro da imagem.
+
+networks:
+  pgm-intranet-network:
+    driver: bridge
+
+volumes:
+  db-data:

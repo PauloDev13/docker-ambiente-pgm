@@ -34,6 +34,8 @@ services:
       SPRING_PROFILES_ACTIVE: prod
       # Se quiser sobrescrever a URL via Compose, você também pode:
       FRONTEND_URLS: ${FRONTEND_URLS:-http://localhost:8080,http://localhost:4200}
+    expose:
+      - "8080"
     networks:
       - pgm-intranet-network
     # Não expomos a porta 8080 do backend para a máquina host!
@@ -48,7 +50,7 @@ services:
     depends_on:
       - backend
     ports:
-      - "8080:8080" # Expõe a porta 8080 do Nginx para o WSL/Windows
+      - "0.0.0.0:8080:8080" # Expõe a porta 8080 do Nginx para o WSL/Windows
     environment:
       # O lado esquerdo é o nome dentro do container.
       # O lado direito (${API_URL}) puxa o valor do seu arquivo .env
